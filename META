@@ -1,0 +1,19 @@
+# OASIS_START
+version = "0.0.1"
+description = "Plot your data with aplomb!"
+
+requires = "yojson,vega-lite"
+archive(byte) = "aplomb.cma"
+archive(native) = "aplomb.cmxa"
+exists_if = "aplomb.cma"
+
+package "ppx_deriving" (
+  requires(-ppx_driver) = "ppx_deriving"
+  ppxopt(-ppx_driver,-custom_ppx) = "ppx_deriving,./ppx_deriving_aplomb.cma"
+  requires(ppx_driver) = "ppx_deriving.api"
+  archive(ppx_driver, byte) = "ppx_deriving_aplomb.cma"
+  archive(ppx_driver, native) = "ppx_deriving_aplomb.cmxa"
+  exists_if = "ppx_deriving_aplomb.cma"
+)
+
+# OASIS_STOP
