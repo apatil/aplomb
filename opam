@@ -17,5 +17,8 @@ depends: [
   "yojson" {>= "1.1.6" & <= "1.4.0"}
   "ppx_deriving" {>= "4.0" & < "5.0"}
   "vega-lite" {>= "0.0.1"}
+  "webview" {>= "0.0.1"}
+  "webbrowser" {>= "0.6.1"}
+  "markup" {>= "0.7.5"}
 ]
 available: [ ocaml-version >= "4.03.0" ]

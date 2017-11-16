@@ -16,4 +16,11 @@ package "ppx_deriving" (
   exists_if = "ppx_deriving_aplomb.cma"
 )
 
+package "local" (
+  requires = "str,yojson,markup,webview,vega-lite,unix,uri,webbrowser"
+  archive(byte) = "aplombLocal.cma"
+  archive(natie) = "aplombLocal.cmxa"
+  exists_if = "aplombLocal.cma"
+)
+
 # OASIS_STOP
