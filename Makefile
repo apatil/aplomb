@@ -27,6 +27,7 @@ byte:
 
 native:
 	ocamlbuild -use-ocamlfind -pkgs ppx_tools,ppx_deriving,ppx_tools.metaquot ppx_deriving_aplomb.cmxa
+	ocamlbuild -use-ocamlfind -pkgs ppx_tools,ppx_deriving,ppx_tools.metaquot ppx_deriving_aplomb.cmxs
 	ocamlbuild -use-ocamlfind -pkgs yojson,vega-lite aplomb.cmxa
 	ocamlbuild -use-ocamlfind -pkgs yojson,markup,webview,vega-lite viewCommon.cmxa
 	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,webbrowser aplombLocal.cmxa
@@ -39,5 +40,13 @@ install : build
 clean:
 	rm -rf _build
 
+test-ppx: byte native
+	ocamlfind ocamlopt -ppx '`ocamlfind query ppx_deriving`/ppx_deriving _build/ppx_deriving_aplomb.cma' -dsource -c testppx.ml
+	- rm *.cm*
+	- rm *.o
+
 test:
-	ocamlbuild -use-ocamlfind -tag thread -pkgs yojson,vega-lite,webview,markup,str,unix,threads,uri,webbrowser test.byte --
+	ocamlbuild -use-ocamlfind -tag thread -pkgs yojson,vega-lite,webview,markup,str,unix,threads,uri,webbrowser -I _build test.byte --
+	# ocamlfind ppx_deriving/ppx_deriving \
+  #   -deriving-plugin _build/ppx_deriving_aplomb.cma \
+  #   test.ml
