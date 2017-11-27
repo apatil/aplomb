@@ -1,8 +1,8 @@
-val to_html : ?selfContained:bool -> ?figureName:string -> VegaLite.V2.TopLevelExtendedSpec.t -> (Markup.signal, Markup.sync) Markup.stream
-val to_string : ?selfContained:bool -> ?figureName:string -> VegaLite.V2.TopLevelExtendedSpec.t -> string
+(** Convert a Vega-Lite spec to HTML. Optionally inline all JavaScript assets into the HTML. *)
+val to_html : ?assets:[`Local | `Remote | `Inline] -> ?figureName:string -> VegaLite.V2.TopLevelExtendedSpec.t -> (Markup.signal, Markup.sync) Markup.stream
 
-module type Backend = sig
-  val show: ?figuresPath:string -> ?width:int -> ?height:int -> ?selfContained:bool -> ?figureName:string -> VegaLite.V2.TopLevelExtendedSpec.t -> (string, string) result
+(** Convert a Vega-Lite spec to an HTML string. *)
+val to_string : ?assets:[`Local | `Remote | `Inline] -> ?figureName:string -> VegaLite.V2.TopLevelExtendedSpec.t -> string
 
-  val close : string -> (unit, string) result
-end
+(** Write a Vega-Lite spec and any JavaScript assets it requires into a folder. *)
+val writeFigureFiles : ?figuresPath:string -> ?assets:[`Local | `Remote | `Inline] -> ?figureName:string -> VegaLite.V2.TopLevelExtendedSpec.t -> (string, string) result

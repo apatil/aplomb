@@ -22,15 +22,16 @@ assets: assets/vega.js assets/vega-embed.js assets/vega-lite.js vegaLiteAssets.m
 byte:
 	ocamlbuild -use-ocamlfind -pkgs ppx_tools,ppx_deriving,ppx_tools.metaquot ppx_deriving_aplomb.cma
 	ocamlbuild -use-ocamlfind -pkgs yojson,vega-lite aplomb.cma
-	ocamlbuild -use-ocamlfind -pkgs yojson,markup,webview,vega-lite viewCommon.cma
-	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,webbrowser aplombLocal.cma
+	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,webbrowser aplombBrowser.cma
+	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,webview aplombWebview.cma
+	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,iocaml-kernel.notebook IAplomb.cma
 
 native:
-	ocamlbuild -use-ocamlfind -pkgs ppx_tools,ppx_deriving,ppx_tools.metaquot ppx_deriving_aplomb.cmxa
-	ocamlbuild -use-ocamlfind -pkgs ppx_tools,ppx_deriving,ppx_tools.metaquot ppx_deriving_aplomb.cmxs
+	ocamlbuild -use-ocamlfind -pkgs ppx_tools,ppx_deriving,ppx_tools.metaquot ppx_deriving_aplomb.cmxa ppx_deriving_aplomb.cmxs
 	ocamlbuild -use-ocamlfind -pkgs yojson,vega-lite aplomb.cmxa
-	ocamlbuild -use-ocamlfind -pkgs yojson,markup,webview,vega-lite viewCommon.cmxa
-	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,webbrowser aplombLocal.cmxa
+	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,webbrowser aplombBrowser.cmxa
+	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,webview aplombWebview.cmxa
+	ocamlbuild -use-ocamlfind -tag thread -pkgs str,yojson,markup,webview,vega-lite,unix,uri,iocaml-kernel.notebook IAplomb.cmxa
 
 build : byte native
 
@@ -41,7 +42,7 @@ clean:
 	rm -rf _build
 
 test-ppx: byte native
-	ocamlfind ocamlopt -ppx '`ocamlfind query ppx_deriving`/ppx_deriving _build/ppx_deriving_aplomb.cma' -dsource -c testppx.ml
+	ocamlfind ocamlopt -ppx '`ocamlfind query ppx_deriving`/ppx_deriving _build/ppx_deriving_aplomb.cma' -dsource -c examples/bar.ml
 	- rm *.cm*
 	- rm *.o
 

@@ -13,7 +13,7 @@ module type DataS = sig
   type field
 
   (** A function that maps the dataset to a list of Yojson objects. *)
-  val inline : t -> Yojson.Safe.json list
+  val inline : t -> VegaLite.V2.Data.t
 
   (**
   A function that evaluates to the name of a field as a string. This name should
@@ -33,19 +33,15 @@ module type AplombS = sig
   open VegaLite.V2
   module Data : DataS
 
-  val otherData : ?format:DataFormat.t -> [ `Jsons of (Yojson.Safe.json list) | `String of string | `Url of string | `Named of string ] -> VegaLite.V2.Data.t
-
   val field : Data.field -> Field.t
-
-  val useData : ?format:DataFormat.t -> Data.t -> VegaLite.V2.Data.t
 
   val fieldDef :
     ?aggregate:AggregateOp.t ->
     ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> FieldDef.t
+    Data.field ->
+    [`Field of FieldDef.t | `Value of ValueDef.t]
 
   type repeat = {
     column : Data.field list;
@@ -61,8 +57,8 @@ module type AplombS = sig
     ?stack:StackOffset.t ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> PositionFieldDef.t
+    Data.field ->
+    [`Field of PositionFieldDef.t | `Value of ValueDef.t]
 
   val conditionalLegendFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -73,8 +69,8 @@ module type AplombS = sig
     ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> ConditionalLegendFieldDef.t
+    Data.field ->
+    [`Field of ConditionalLegendFieldDef.t | `Value of ConditionalLegendValueDef.t]
 
   val conditionalTextFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -83,8 +79,8 @@ module type AplombS = sig
     ?format:string ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> ConditionalTextFieldDef.t
+    Data.field ->
+    [`Field of ConditionalTextFieldDef.t | `Value of ConditionalTextValueDef.t]
 
   val orderFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -92,8 +88,8 @@ module type AplombS = sig
     ?sort:SortOrder.t ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> OrderFieldDef.t
+    Data.field ->
+    [`Field of OrderFieldDef.t | `Fields of OrderFieldDef.t list]
 
   val conditionLegendFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -104,8 +100,8 @@ module type AplombS = sig
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
     selection:SelectionOperand.t ->
-    field:Data.field ->
-    unit -> ConditionLegendFieldDef.t
+    Data.field ->
+    [`Field of ConditionLegendFieldDef.t | `Value of ConditionValueDef.t]
 
   val conditionTextFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -114,8 +110,8 @@ module type AplombS = sig
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
     selection:SelectionOperand.t ->
-    field:Data.field ->
-    unit -> ConditionTextFieldDef.t
+    Data.field ->
+    [`Field of ConditionTextFieldDef.t | `Value of ConditionValueDef.t]
 
   val facetFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -124,8 +120,8 @@ module type AplombS = sig
     ?sort:SortOrder.t ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> FacetFieldDef.t
+    Data.field ->
+    FacetFieldDef.t
 
   val legendFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -135,8 +131,8 @@ module type AplombS = sig
     ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> LegendFieldDef.t
+    Data.field ->
+    LegendFieldDef.t
 
   val scaleFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -145,8 +141,8 @@ module type AplombS = sig
     ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> ScaleFieldDef.t
+    Data.field ->
+    ScaleFieldDef.t
 
   val orderFieldDef :
     ?aggregate:AggregateOp.t ->
@@ -154,8 +150,8 @@ module type AplombS = sig
     ?sort:SortOrder.t ->
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
-    field:Data.field ->
-    unit -> OrderFieldDef.t
+    Data.field ->
+    OrderFieldDef.t
 
   (* Types for encoding fields *)
   val legendCondition :
@@ -198,6 +194,18 @@ module type AplombS = sig
     Data.field ->
     Spec.t -> Spec.t
 
+  val xRep :
+    ?aggregate:AggregateOp.t ->
+    ?axis:Axis.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?scale:Scale.t ->
+    ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
+    ?stack:StackOffset.t ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
   val xVal :
     [ `Int of int | `Float of float | `Bool of bool | `String of string ] ->
     Spec.t -> Spec.t
@@ -214,10 +222,21 @@ module type AplombS = sig
     Data.field ->
     Spec.t -> Spec.t
 
+  val yRep :
+    ?aggregate:AggregateOp.t ->
+    ?axis:Axis.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?scale:Scale.t ->
+    ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
+    ?stack:StackOffset.t ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
   val yVal :
     [ `Int of int | `Float of float | `Bool of bool | `String of string ] ->
     Spec.t -> Spec.t
-
 
   val x2 :
     ?aggregate:AggregateOp.t ->
@@ -225,6 +244,14 @@ module type AplombS = sig
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
     Data.field ->
+    Spec.t -> Spec.t
+
+  val x2Rep :
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
     Spec.t -> Spec.t
 
   val x2Val :
@@ -237,6 +264,14 @@ module type AplombS = sig
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
     Data.field ->
+    Spec.t -> Spec.t
+
+  val y2Rep :
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
     Spec.t -> Spec.t
 
   val y2Val :
@@ -253,6 +288,18 @@ module type AplombS = sig
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
     Data.field ->
+    Spec.t -> Spec.t
+
+  val sizeRep :
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?condition:ConditionValueDef.t ->
+    ?legend:Legend.t ->
+    ?scale:Scale.t ->
+    ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
     Spec.t -> Spec.t
 
   val sizeVal :
@@ -272,6 +319,18 @@ module type AplombS = sig
     Data.field ->
     Spec.t -> Spec.t
 
+  val shapeRep :
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?condition:ConditionValueDef.t ->
+    ?legend:Legend.t ->
+    ?scale:Scale.t ->
+    ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
   val shapeVal :
     ?condition:[ `Field of ConditionLegendFieldDef.t | `Value of ConditionValueDef.t ] ->
     ?value:[ `Int of int | `Float of float | `Bool of bool | `String of string ] ->
@@ -287,6 +346,18 @@ module type AplombS = sig
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
     Data.field ->
+    Spec.t -> Spec.t
+
+  val opacityRep :
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?condition:ConditionValueDef.t ->
+    ?legend:Legend.t ->
+    ?scale:Scale.t ->
+    ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
     Spec.t -> Spec.t
 
   val opacityVal :
@@ -306,6 +377,18 @@ module type AplombS = sig
     Data.field ->
     Spec.t -> Spec.t
 
+  val colorRep :
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?condition:ConditionValueDef.t ->
+    ?legend:Legend.t ->
+    ?scale:Scale.t ->
+    ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
   val colorVal :
     ?condition:[ `Field of ConditionLegendFieldDef.t | `Value of ConditionValueDef.t ] ->
     ?value:[ `Int of int | `Float of float | `Bool of bool | `String of string ] ->
@@ -321,6 +404,16 @@ module type AplombS = sig
     Data.field ->
     Spec.t -> Spec.t
 
+  val tooltipRep :
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?condition:ConditionValueDef.t ->
+    ?format:string ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
   val tooltipVal :
     ?condition:[ `Field of ConditionTextFieldDef.t | `Value of ConditionValueDef.t ] ->
     ?value:[ `Int of int | `Float of float | `Bool of bool | `String of string ] ->
@@ -334,6 +427,16 @@ module type AplombS = sig
     ?timeUnit:TimeUnit.t ->
     ?typ:Type.t ->
     Data.field ->
+    Spec.t -> Spec.t
+
+  val textRep :
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?condition:ConditionValueDef.t ->
+    ?format:string ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
     Spec.t -> Spec.t
 
   val textVal :
@@ -373,14 +476,14 @@ module type AplombS = sig
     ?description:string ->
     ?height:[ `Float of float | `Int of int ] ->
     ?name:string ->
-    ?selection:(string * VegaLite.V2.SelectionDef.t) list ->
+    ?selection:(string * SelectionDef.t) list ->
     ?title:[ `Params of TitleParams.t | `String of string ] ->
     ?transform:Transform.t list ->
     ?width:[ `Float of float | `Int of int ] ->
     ?encoding:Encoding.t ->
     ?data:(Data.t) ->
-    mark:AnyMark.t ->
-    unit -> CompositeUnitSpec.t
+    AnyMark.t ->
+    CompositeUnitSpec.t
 
   val layerSpec :
     ?description:string ->
@@ -391,8 +494,8 @@ module type AplombS = sig
     ?transform:Transform.t list ->
     ?width:[ `Float of float | `Int of int ] ->
     ?data:(Data.t) ->
-    layer:[ `Layer of LayerSpec.t | `Unit of CompositeUnitSpec.t ] list ->
-    unit -> LayerSpec.t
+    [ `Layer of LayerSpec.t | `Unit of CompositeUnitSpec.t ] list ->
+    LayerSpec.t
 
   val faceted :
     ?description:string ->
@@ -402,8 +505,8 @@ module type AplombS = sig
     ?transform:Transform.t list ->
     ?data:(Data.t) ->
     facet:Facet.t ->
-    spec:[ `Layer of LayerSpec.t | `Unit of CompositeUnitSpec.t ] ->
-    unit -> Spec.t
+    [ `Layer of LayerSpec.t | `Unit of CompositeUnitSpec.t ] ->
+    Spec.t
 
   val hconcat :
     ?description:string ->
@@ -412,8 +515,8 @@ module type AplombS = sig
     ?title:[ `Params of TitleParams.t | `String of string ] ->
     ?transform:Transform.t list ->
     ?data:(Data.t) ->
-    hconcat:Spec.t list ->
-    unit -> Spec.t
+    Spec.t list ->
+    Spec.t
 
   val vconcat :
     ?description:string ->
@@ -422,8 +525,8 @@ module type AplombS = sig
     ?title:[ `Params of TitleParams.t | `String of string ] ->
     ?transform:Transform.t list ->
     ?data:(Data.t) ->
-    vconcat:Spec.t list ->
-    unit -> Spec.t
+    Spec.t list ->
+    Spec.t
 
   val repeat :
     ?description:string ->
@@ -433,21 +536,21 @@ module type AplombS = sig
     ?transform:Transform.t list ->
     ?data:(Data.t) ->
     repeat:repeat ->
-    spec:Spec.t ->
-    unit -> Spec.t
+    Spec.t ->
+    Spec.t
 
   val simple :
     ?description:string ->
     ?height:[ `Float of float | `Int of int ] ->
     ?name:string ->
-    ?selection:(string * VegaLite.V2.SelectionDef.t) list ->
+    ?selection:(string * SelectionDef.t) list ->
     ?title:[ `Params of TitleParams.t | `String of string ] ->
     ?transform:Transform.t list ->
     ?width:[ `Float of float | `Int of int ] ->
     ?encoding:Encoding.t ->
     ?data:(Data.t) ->
-    mark:AnyMark.t ->
-    unit -> Spec.t
+    AnyMark.t ->
+    Spec.t
 
   val layer :
     ?description:string ->
@@ -458,8 +561,8 @@ module type AplombS = sig
     ?transform:Transform.t list ->
     ?width:[ `Float of float | `Int of int ] ->
     ?data:(Data.t) ->
-    layer:[ `Layer of LayerSpec.t | `Unit of CompositeUnitSpec.t ] list ->
-    unit -> Spec.t
+    [ `Layer of LayerSpec.t | `Unit of CompositeUnitSpec.t ] list ->
+    Spec.t
 
   val finish :
     ?padding:Padding.t ->
@@ -474,16 +577,6 @@ end
 module Make (D : DataS) : (AplombS with module Data = D) = struct
   open VegaLite.V2
   module Data = D
-
-  let useData ?format data =
-    `Inline (InlineData.make ?format ~values:(`Jsons (D.inline data)) ())
-
-  let otherData ?format x = match x with
-    | `Jsons l -> `Inline (InlineData.make ?format ~values:(`Jsons l) ())
-    | `String s -> `Inline (InlineData.make ?format ~values:(`String s) ())
-    | `Url url -> `Url (UrlData.make ?format ~url ())
-    | `Named name -> `Named (NamedData.make ?format ~name ())
-
 
   (* Types for building blocks of encodings based on concrete fields *)
 
@@ -505,17 +598,17 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     row : D.field list;
   }
 
-  let fieldDef ?aggregate ?bin ?timeUnit ?typ ~field:x () =
-    FieldDef.make
+  let fieldDef ?aggregate ?bin ?timeUnit ?typ x =
+    `Field (FieldDef.make
       ?aggregate
       ?bin
       ?timeUnit
       ~typ:(inferTyp typ x)
       ~field:(field x)
-      ()
+      ())
 
-  let positionFieldDef ?aggregate ?axis ?bin ?scale ?sort ?stack ?timeUnit ?typ ~field:x () =
-    PositionFieldDef.make
+  let positionFieldDef ?aggregate ?axis ?bin ?scale ?sort ?stack ?timeUnit ?typ x =
+    `Field (PositionFieldDef.make
       ?aggregate
       ?axis
       ?bin
@@ -525,10 +618,10 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ?timeUnit
       ~typ:(inferTyp typ x)
       ~field:(field x)
-      ()
+      ())
 
-  let conditionalLegendFieldDef ?aggregate ?bin ?condition ?legend ?scale ?sort ?timeUnit ?typ ~field:x () =
-    ConditionalLegendFieldDef.make
+  let conditionalLegendFieldDef ?aggregate ?bin ?condition ?legend ?scale ?sort ?timeUnit ?typ x =
+    `Field (ConditionalLegendFieldDef.make
       ?aggregate
       ?bin
       ?condition
@@ -538,10 +631,10 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ?timeUnit
       ~typ:(inferTyp typ x)
       ~field:(field x)
-      ()
+      ())
 
-  let conditionalTextFieldDef ?aggregate ?bin ?condition ?format ?timeUnit ?typ ~field:x () =
-    ConditionalTextFieldDef.make
+  let conditionalTextFieldDef ?aggregate ?bin ?condition ?format ?timeUnit ?typ x =
+    `Field (ConditionalTextFieldDef.make
       ?aggregate
       ?bin
       ?condition
@@ -549,9 +642,9 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ?timeUnit
       ~typ:(inferTyp typ x)
       ~field:(field x)
-      ()
+      ())
 
-  let orderFieldDef ?aggregate ?bin ?sort ?timeUnit ?typ ~field:x () =
+  let orderFieldDef ?aggregate ?bin ?sort ?timeUnit ?typ x =
     OrderFieldDef.make
       ?aggregate
       ?bin
@@ -561,8 +654,8 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ~field:(field x)
       ()
 
-  let conditionLegendFieldDef ?aggregate ?bin ?legend ?scale ?sort ?timeUnit ?typ ~selection ~field:x () =
-    ConditionLegendFieldDef.make
+  let conditionLegendFieldDef ?aggregate ?bin ?legend ?scale ?sort ?timeUnit ?typ ~selection x =
+    `Field (ConditionLegendFieldDef.make
       ?aggregate
       ?bin
       ?legend
@@ -572,10 +665,10 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ~typ:(inferTyp typ x)
       ~selection
       ~field:(field x)
-      ()
+      ())
 
-  let conditionTextFieldDef ?aggregate ?bin ?format ?timeUnit ?typ ~selection ~field:x () =
-    ConditionTextFieldDef.make
+  let conditionTextFieldDef ?aggregate ?bin ?format ?timeUnit ?typ ~selection x =
+    `Field (ConditionTextFieldDef.make
       ?aggregate
       ?bin
       ?format
@@ -583,9 +676,9 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ~typ:(inferTyp typ x)
       ~selection
       ~field:(field x)
-      ()
+      ())
 
-  let facetFieldDef ?aggregate ?bin ?header ?sort ?timeUnit ?typ ~field:x () =
+  let facetFieldDef ?aggregate ?bin ?header ?sort ?timeUnit ?typ x =
     FacetFieldDef.make
       ?aggregate
       ?bin
@@ -596,7 +689,7 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ~field:(field x)
       ()
 
-  let legendFieldDef ?aggregate ?bin ?legend ?scale ?sort ?timeUnit ?typ ~field:x () =
+  let legendFieldDef ?aggregate ?bin ?legend ?scale ?sort ?timeUnit ?typ x =
     LegendFieldDef.make
       ?aggregate
       ?bin
@@ -608,7 +701,7 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ~field:(field x)
       ()
 
-  let scaleFieldDef ?aggregate ?bin ?scale ?sort ?timeUnit ?typ ~field:x () =
+  let scaleFieldDef ?aggregate ?bin ?scale ?sort ?timeUnit ?typ x =
     ScaleFieldDef.make
       ?aggregate
       ?bin
@@ -619,7 +712,7 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ~field:(field x)
       ()
 
-  let orderFieldDef ?aggregate ?bin ?sort ?timeUnit ?typ ~field:x () =
+  let orderFieldDef ?aggregate ?bin ?sort ?timeUnit ?typ x =
     OrderFieldDef.make
       ?aggregate
       ?bin
@@ -630,10 +723,10 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
       ()
 
   let legendCondition ?aggregate ?bin ?legend ?scale ?sort ?timeUnit ?typ ~selection x =
-    `Field (conditionLegendFieldDef ?aggregate ?bin ?legend ?scale ?sort ?timeUnit ?typ ~selection ~field:x ())
+    (conditionLegendFieldDef ?aggregate ?bin ?legend ?scale ?sort ?timeUnit ?typ ~selection x)
 
   let textCondition ?aggregate ?bin ?format ?timeUnit ?typ ~selection x =
-    `Field (conditionTextFieldDef ?aggregate ?bin ?format ?timeUnit ?typ ~selection ~field:x ())
+    (conditionTextFieldDef ?aggregate ?bin ?format ?timeUnit ?typ ~selection x)
 
   let sort ?order ~op x =
     `Field (SortField.make
@@ -671,22 +764,47 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     D.field ->
     Spec.t -> Spec.t
 
-  let pfdSet (f : PositionFieldDef.t -> Encoding.t -> Encoding.t) : pfdSetter =
+  type pfdRepSetter =
+    ?aggregate:AggregateOp.t ->
+    ?axis:Axis.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?scale:Scale.t ->
+    ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
+    ?stack:StackOffset.t ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
+  let pfdSet (f : [`Field of PositionFieldDef.t | `Value of ValueDef.t] -> Encoding.t -> Encoding.t) : pfdSetter =
     fun ?aggregate ?axis ?bin ?scale ?sort ?stack ?timeUnit ?typ x spec ->
-      let pfd = positionFieldDef ?aggregate ?axis ?bin ?scale ?sort ?stack ?timeUnit ?typ ~field:x () in
+      let pfd = positionFieldDef ?aggregate ?axis ?bin ?scale ?sort ?stack ?timeUnit ?typ x in
+      specSet (f pfd) spec
+
+  let pfdSetRep (f : [`Field of PositionFieldDef.t | `Value of ValueDef.t] -> Encoding.t -> Encoding.t) : pfdRepSetter =
+    fun ?aggregate ?axis ?bin ?scale ?sort ?stack ?timeUnit ~typ x spec ->
+      let pfd = `Field (PositionFieldDef.make ?aggregate ?axis ?bin ?scale ?sort ?stack ?timeUnit ~typ ~field:(`Repeat x) ()) in
       specSet (f pfd) spec
 
   let x =
-    let setter pfd e = Encoding.{e with x = Some (`Field pfd)} in
+    let setter pfd e = Encoding.{e with x = Some pfd} in
     pfdSet setter
+
+  let xRep =
+    let setter pfd e = Encoding.{e with x = Some pfd} in
+    pfdSetRep setter
 
   let xVal v spec =
     let f enc = Encoding.{enc with x = Some (`Value v)} in
     specSet f spec
 
   let y =
-    let setter pfd e = Encoding.{e with y = Some (`Field pfd)} in
+    let setter pfd e = Encoding.{e with y = Some pfd} in
     pfdSet setter
+
+  let yRep =
+    let setter pfd e = Encoding.{e with y = Some pfd} in
+    pfdSetRep setter
 
   let yVal v spec =
     let f enc = Encoding.{enc with y = Some (`Value v)} in
@@ -701,22 +819,43 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     D.field ->
     Spec.t -> Spec.t
 
-  let fdSet (f : FieldDef.t -> Encoding.t -> Encoding.t) : fdSetter =
+  type fdRepSetter =
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
+  let fdSet (f : [`Field of FieldDef.t | `Value of ValueDef.t] -> Encoding.t -> Encoding.t) : fdSetter =
     fun ?aggregate ?bin ?timeUnit ?typ x spec ->
-      let fd = fieldDef ?aggregate ?bin ?timeUnit ?typ ~field:x () in
+      let fd = fieldDef ?aggregate ?bin ?timeUnit ?typ x in
+      specSet (f fd) spec
+
+  let fdSetRep (f : [`Field of FieldDef.t | `Value of ValueDef.t] -> Encoding.t -> Encoding.t) : fdRepSetter =
+    fun ?aggregate ?bin ?timeUnit ~typ x spec ->
+      let fd = `Field (FieldDef.make ?aggregate ?bin ?timeUnit ~typ ~field:(`Repeat x) ()) in
       specSet (f fd) spec
 
   let x2 =
-    let setter fd e = Encoding.{e with x2 = Some (`Field fd)} in
+    let setter fd e = Encoding.{e with x2 = Some fd} in
     fdSet setter
+
+  let x2Rep =
+    let setter fd e = Encoding.{e with x2 = Some fd} in
+    fdSetRep setter
 
   let x2Val v spec =
     let f enc = Encoding.{enc with x2 = Some (`Value v)} in
     specSet f spec
 
   let y2 =
-    let setter fd e = Encoding.{e with x2 = Some (`Field fd)} in
+    let setter fd e = Encoding.{e with x2 = Some fd} in
     fdSet setter
+
+  let y2Rep =
+    let setter fd e = Encoding.{e with x2 = Some fd} in
+    fdSetRep setter
 
   let y2Val v spec =
     let f enc = Encoding.{enc with y2 = Some (`Value v)} in
@@ -735,14 +874,35 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     D.field ->
     Spec.t -> Spec.t
 
-  let clfdSet (f : ConditionalLegendFieldDef.t -> Encoding.t -> Encoding.t) : clfdSetter =
+  type clfdRepSetter =
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?condition:ConditionValueDef.t ->
+    ?legend:Legend.t ->
+    ?scale:Scale.t ->
+    ?sort:[ `Field of SortField.t | `Order of SortOrder.t ] ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
+  let clfdSet (f : [`Field of ConditionalLegendFieldDef.t | `Value of ConditionalLegendValueDef.t] -> Encoding.t -> Encoding.t) : clfdSetter =
     fun ?aggregate ?bin ?condition ?legend ?scale ?sort ?timeUnit ?typ x spec ->
-      let clfd = conditionalLegendFieldDef ?aggregate ?bin ?condition ?legend ?scale ?sort ?timeUnit ?typ ~field:x () in
+      let clfd = conditionalLegendFieldDef ?aggregate ?bin ?condition ?legend ?scale ?sort ?timeUnit ?typ x in
+      specSet (f clfd) spec
+
+  let clfdSetRep (f : [`Field of ConditionalLegendFieldDef.t | `Value of ConditionalLegendValueDef.t] -> Encoding.t -> Encoding.t) : clfdRepSetter =
+    fun ?aggregate ?bin ?condition ?legend ?scale ?sort ?timeUnit ~typ x spec ->
+      let clfd = `Field (ConditionalLegendFieldDef.make ?aggregate ?bin ?condition ?legend ?scale ?sort ?timeUnit ~typ ~field:(`Repeat x) ()) in
       specSet (f clfd) spec
 
   let size =
-    let setter clfd e = Encoding.{e with size = Some (`Field clfd)} in
+    let setter clfd e = Encoding.{e with size = Some clfd} in
     clfdSet setter
+
+  let sizeRep =
+    let setter clfd e = Encoding.{e with size = Some clfd} in
+    clfdSetRep setter
 
   let sizeVal ?condition ?value spec =
     let v = ConditionalLegendValueDef.make ?condition ?value () in
@@ -750,8 +910,12 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     specSet f spec
 
   let shape =
-    let setter clfd e = Encoding.{e with shape = Some (`Field clfd)} in
+    let setter clfd e = Encoding.{e with shape = Some clfd} in
     clfdSet setter
+
+  let shapeRep =
+    let setter clfd e = Encoding.{e with shape = Some clfd} in
+    clfdSetRep setter
 
   let shapeVal ?condition ?value spec =
     let v = ConditionalLegendValueDef.make ?condition ?value () in
@@ -759,8 +923,12 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     specSet f spec
 
   let opacity =
-    let setter clfd e = Encoding.{e with opacity = Some (`Field clfd)} in
+    let setter clfd e = Encoding.{e with opacity = Some clfd} in
     clfdSet setter
+
+  let opacityRep =
+    let setter clfd e = Encoding.{e with opacity = Some clfd} in
+    clfdSetRep setter
 
   let opacityVal ?condition ?value spec =
     let v = ConditionalLegendValueDef.make ?condition ?value () in
@@ -768,8 +936,12 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     specSet f spec
 
   let color =
-    let setter clfd e = Encoding.{e with color = Some (`Field clfd)} in
+    let setter clfd e = Encoding.{e with color = Some clfd} in
     clfdSet setter
+
+  let colorRep =
+    let setter clfd e = Encoding.{e with color = Some clfd} in
+    clfdSetRep setter
 
   let colorVal ?condition ?value spec =
     let v = ConditionalLegendValueDef.make ?condition ?value () in
@@ -787,14 +959,33 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     D.field ->
     Spec.t -> Spec.t
 
-  let ctfdSet (f : ConditionalTextFieldDef.t -> Encoding.t -> Encoding.t) : ctfdSetter =
+  type ctfdRepSetter =
+    ?aggregate:AggregateOp.t ->
+    ?bin:[ `Bool of bool | `Params of BinParams.t ] ->
+    ?condition:ConditionValueDef.t ->
+    ?format:string ->
+    ?timeUnit:TimeUnit.t ->
+    typ:Type.t ->
+    RepeatRef.t ->
+    Spec.t -> Spec.t
+
+  let ctfdSet (f : [`Field of ConditionalTextFieldDef.t | `Value of ConditionalTextValueDef.t] -> Encoding.t -> Encoding.t) : ctfdSetter =
     fun ?aggregate ?bin ?condition ?format ?timeUnit ?typ x spec ->
-      let ctfd = conditionalTextFieldDef ?aggregate ?bin ?condition ?format ?timeUnit ?typ ~field:x () in
+      let ctfd = conditionalTextFieldDef ?aggregate ?bin ?condition ?format ?timeUnit ?typ x in
+      specSet (f ctfd) spec
+
+  let ctfdSetRep (f : [`Field of ConditionalTextFieldDef.t | `Value of ConditionalTextValueDef.t] -> Encoding.t -> Encoding.t) : ctfdRepSetter =
+    fun ?aggregate ?bin ?condition ?format ?timeUnit ~typ x spec ->
+      let ctfd = `Field (ConditionalTextFieldDef.make ?aggregate ?bin ?condition ?format ?timeUnit ~typ ~field:(`Repeat x) ()) in
       specSet (f ctfd) spec
 
   let tooltip =
-    let setter ctfd e = Encoding.{e with tooltip = Some (`Field ctfd)} in
+    let setter ctfd e = Encoding.{e with tooltip = Some ctfd} in
     ctfdSet setter
+
+  let tooltipRep =
+    let setter ctfd e = Encoding.{e with tooltip = Some ctfd} in
+    ctfdSetRep setter
 
   let tooltipVal ?condition ?value spec =
     let v = ConditionalTextValueDef.make ?condition ?value () in
@@ -802,8 +993,12 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     specSet f spec
 
   let text =
-    let setter ctfd e = Encoding.{e with text = Some (`Field ctfd)} in
+    let setter ctfd e = Encoding.{e with text = Some ctfd} in
     ctfdSet setter
+
+  let textRep =
+    let setter ctfd e = Encoding.{e with text = Some ctfd} in
+    ctfdSetRep setter
 
   let textVal ?condition ?value spec =
     let v = ConditionalTextValueDef.make ?condition ?value () in
@@ -811,7 +1006,7 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     specSet f spec
 
   let order ?aggregate ?bin ?sort ?timeUnit ?typ x spec =
-    let o = orderFieldDef ?aggregate ?bin ?sort ?timeUnit ?typ ~field:x () in
+    let o = orderFieldDef ?aggregate ?bin ?sort ?timeUnit ?typ x in
     let f enc = Encoding.{enc with order = Some (`Field o)} in
     specSet f spec
 
@@ -820,8 +1015,8 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
     specSet f spec
 
   let detail ?aggregate ?bin ?timeUnit ?typ x spec =
-    let o = fieldDef ?aggregate ?bin ?timeUnit ?typ ~field:x () in
-    let f enc = Encoding.{enc with detail = Some (`Field o)} in
+    let o = fieldDef ?aggregate ?bin ?timeUnit ?typ x in
+    let f enc = Encoding.{enc with detail = Some o} in
     specSet f spec
 
   let detailMulti fds spec =
@@ -830,7 +1025,7 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
 
   let data_ : D.t option -> VegaLite.V2.Data.t option = function
     | None -> None
-    | Some d -> Some (useData d)
+    | Some d -> Some (D.inline d)
 
   let repeat_ : repeat -> Repeat.t = function
     | Repeat.{row; column} -> Repeat.{
@@ -838,33 +1033,33 @@ module Make (D : DataS) : (AplombS with module Data = D) = struct
         column = Some (List.map D.fieldName column);
       }
 
-  let unitSpec ?description ?height ?name ?selection ?title ?transform ?width ?encoding ?data ~mark () =
+  let unitSpec ?description ?height ?name ?selection ?title ?transform ?width ?encoding ?data mark =
     let e = match encoding with
       | None -> (Encoding.make ())
       | Some e -> e
     in
     CompositeUnitSpec.make ?description ?height ?name ?selection ?title ?transform ?width ?data:(data_ data) ~encoding:e ~mark ()
 
-  let layerSpec ?description ?height ?name ?resolve ?title ?transform ?width ?data ~layer () =
+  let layerSpec ?description ?height ?name ?resolve ?title ?transform ?width ?data layer =
     LayerSpec.make ?description ?height ?name ?resolve ?title ?transform ?width ?data:(data_ data) ~layer ()
 
-  let faceted ?description ?name ?resolve ?title ?transform ?data ~facet ~spec () =
+  let faceted ?description ?name ?resolve ?title ?transform ?data ~facet spec =
     `Faceted (FacetedSpec.make ?description ?name ?resolve ?title ?transform ?data:(data_ data) ~facet ~spec ())
 
-  let hconcat ?description ?name ?resolve ?title ?transform ?data ~hconcat () =
+  let hconcat ?description ?name ?resolve ?title ?transform ?data hconcat =
     `HConcat (HConcatSpec.make ?description ?name ?resolve ?title ?transform ?data:(data_ data) ~hconcat ())
 
-  let vconcat ?description ?name ?resolve ?title ?transform ?data ~vconcat () =
+  let vconcat ?description ?name ?resolve ?title ?transform ?data vconcat =
     `VConcat (VConcatSpec.make ?description ?name ?resolve ?title ?transform ?data:(data_ data) ~vconcat ())
 
-  let repeat ?description ?name ?resolve ?title ?transform ?data ~repeat ~spec () =
+  let repeat ?description ?name ?resolve ?title ?transform ?data ~repeat spec =
     `Repeat (RepeatSpec.make ?description ?name ?resolve ?title ?transform ?data:(data_ data) ~repeat:(repeat_ repeat) ~spec ())
 
-  let simple ?description ?height:(h=`Int 395) ?name ?selection ?title ?transform ?width:(w=`Int 640) ?encoding ?data ~mark () =
-    `Unit (unitSpec ?description ~height:h ?name ?selection ?title ?transform ~width:w ?encoding ?data ~mark ())
+  let simple ?description ?height:(h=`Int 395) ?name ?selection ?title ?transform ?width:(w=`Int 640) ?encoding ?data mark =
+    `Unit (unitSpec ?description ~height:h ?name ?selection ?title ?transform ~width:w ?encoding ?data mark)
 
-  let layer ?description ?height:(h=`Int 395) ?name ?resolve ?title ?transform ?width:(w=`Int 640) ?data ~layer () =
-    `Layer (layerSpec ?description ~height:h ?name ?resolve ?title ?transform ~width:w ?data ~layer ())
+  let layer ?description ?height:(h=`Int 395) ?name ?resolve ?title ?transform ?width:(w=`Int 640) ?data layer =
+    `Layer (layerSpec ?description ~height:h ?name ?resolve ?title ?transform ~width:w ?data layer)
 
   let facetize row column = function
     | Encoding.{x; y; x2; y2; tooltip; text; size; shape; order; opacity; detail; color} ->
@@ -912,13 +1107,15 @@ module Dynamic = Make(
        and it needs to be smartish about deciding which values are missing
     (* let to_csv (x : t) : string list list = []
        let of_csv (csv : string list list) : t = [] *)
+
+      Also need of_yojson
     *)
 
     type field = string
     let defaultTyp _ = `Ordinal
     let fieldName s = s
 
-    let inline (b : t) : Yojson.Safe.json list =
+    let inline (b : t) : VegaLite.V2.Data.t =
 
       let n =
         let reducer (sofar : int) ((_, c) : (string * column)) : int =
@@ -971,8 +1168,11 @@ module Dynamic = Make(
           let mapper i l = (k, getOrNullOpt (fun f -> `Bool f) a i) :: l in Array.mapi mapper sofar
 
       in
-      List.fold_left reducer (Array.make n []) b
-      |> Array.map (fun l -> `Assoc l)
-      |> Array.to_list
+      let jsons = List.fold_left reducer (Array.make n []) b
+        |> Array.map (fun l -> `Assoc l)
+        |> Array.to_list
+      in
+      `Inline (VegaLite.V2.InlineData.make ~values:(`Jsons jsons) ())
+
 
   end)

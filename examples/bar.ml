@@ -1,22 +1,18 @@
-(* utop -require ppx_deriving_yojson,yojson,aplomb.ppx_deriving,aplomb -init examples/bar.ml *)
-module Row = struct
-  type t = {
-    a : string [@typ `Ordinal];
-    b : int [@typ `Quantitative]
-  } [@@deriving yojson,aplomb]
-end
+(*
+  To run interactively:
 
-let data =
-  Row.([
-      {a = "A"; b = 28}; {a = "B"; b = 55}; {a = "C"; b = 43};
-      {a = "D"; b = 91}; {a = "E"; b = 81}; {a = "F"; b = 53};
-      {a = "G"; b = 19}; {a = "H"; b = 87}; {a = "I"; b = 52}
-    ])
+  utop -require aplomb,aplomb.browser -init examples/bar.ml
+*)
 
-module A = Aplomb.Make(Row)
+let data = [
+  ("a", `String [| "A"; "B"; "C"; "D"; "E"; "F"; "G"; "H"; "I" |]);
+  ("b", `Int [| 28; 55; 43; 91; 81; 53; 19; 87; 52 |])
+]
+
 let spec =
-  A.(simple ~data ~mark:(`Mark `Bar) ~description:"A simple bar chart with embedded data." ()
-     |> x `a
-     |> y `b
-     |> toplevel
-     |> to_yojson)
+  Aplomb.Dynamic.(simple ~data ~description:"A simple bar chart with embedded data." (`Mark `Bar)
+    |> x "a" ~typ:`Ordinal
+    |> y "b" ~typ:`Quantitative
+    |> finish)
+
+let _ = AplombBrowser.show spec

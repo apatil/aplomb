@@ -1,42 +1,74 @@
 # Plot your data with aplomb!
 
-Aplomb is a plotting package for OCaml based on [Vega-Lite](https://github.com/apatil/ocaml-vega-lite).
+Aplomb is a plotting package for OCaml based on [Vega-Lite](https://vega.github.io/vega-lite/).
 
 Status: **pre-release**, expect breaking changes.
+
+## Overview
+
+Aplomb makes it simple to create Vega-Lite visualization [specs](https://github.com/apatil/ocaml-vega-lite)
+from datasets, then view the specs as plots.
+
+- Package `aplomb.browser` shows plots in [browser tabs](https://github.com/dbuenzli/webbrowser).
+- `aplomb.webview` shows them in [webviews](https://github.com/apatil/ocaml-webview).
+- `aplomb.iocaml` shows them in [Iocaml](https://github.com/andrewray/iocaml) notebooks. See examples/bar.ipynb.
 
 ## Usage example
 
 ```ocaml
 (*
-To run this example interactively, initialize utop with
+  To run interactively:
 
-  utop -require aplomb,aplomb.local
-
-Be sure you've opam installed aplomb, vega-lite and webview.
+  utop -require aplomb,aplomb.browser -init examples/bar.ml
 *)
-
 let data = [
   ("a", `String [| "A"; "B"; "C"; "D"; "E"; "F"; "G"; "H"; "I" |]);
   ("b", `Int [| 28; 55; 43; 91; 81; 53; 19; 87; 52 |])
 ]
 
 let spec =
-  Aplomb.Dynamic.(simple ~mark:(`Mark `Bar) ~data ~description:"A simple bar chart with embedded data." ()
-     |> x "a" ~typ:`Ordinal
-     |> y "b" ~typ:`Quantitative
-     |> finish)
+  Aplomb.Dynamic.(simple ~data ~description:"A simple bar chart with embedded data." (`Mark `Bar)
+    |> x "a" ~typ:`Ordinal
+    |> y "b" ~typ:`Quantitative
+    |> finish)
 
-(* let _ = spec |> AplombLocal.Webview.show ~selfContained:false ~figureName:"Test Plot With Aplomb"  *)
-let _ = spec |> AplombLocal.Webbrowser.show ~selfContained:false ~figureName:"Test Plot With Aplomb"
+let _ = AplombBrowser.show spec
 ```
 
-## Deriving Aplomb for record types
+## Usage example with static datatypes
 
-Coming soon
+```ocaml
+(*
+  To run interactively:
 
-## Data frames
+  utop -require aplomb.ppx_deriving,aplomb,ppx_deriving_yojson,yojson,aplomb.browser -init examples/bar_static.ml
+*)
+type row = {
+    a : string [@typ `Ordinal];
+    b : int [@typ `Quantitative]
+  } [@@deriving yojson,aplomb]
 
-Coming soon?
+let data =
+  [|
+    {a = "A"; b = 28};
+    {a = "B"; b = 55};
+    {a = "C"; b = 43};
+    {a = "D"; b = 91};
+    {a = "E"; b = 81};
+    {a = "F"; b = 53};
+    {a = "G"; b = 19};
+    {a = "H"; b = 87};
+    {a = "I"; b = 52}
+  |]
+
+let spec =
+  Plot_row.(simple ~data ~description:"A simple bar chart with embedded data." (`Mark `Bar)
+    |> x `a
+    |> y `b
+    |> finish)
+
+let _ = AplombBrowser.show spec
+```
 
 ## Storing your data in a custom type
 
@@ -92,5 +124,3 @@ let spec = PlotData.(simple ... () |> toplevel)
 
 Hopefully one day soon OCaml will grow a proper data frame, and this functor
 will make it easy to derive plotting modules for that!
-
-Coming soon: visualizing the spec interactively from utop and IOCaml.

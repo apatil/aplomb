@@ -8,19 +8,33 @@ archive(native) = "aplomb.cmxa"
 exists_if = "aplomb.cma"
 
 package "ppx_deriving" (
-  requires(-ppx_driver) = "ppx_deriving"
+  requires(-ppx_driver) = "ppx_deriving,yojson,aplomb"
   ppxopt(-ppx_driver,-custom_ppx) = "ppx_deriving,./ppx_deriving_aplomb.cma"
-  requires(ppx_driver) = "ppx_deriving.api"
+  requires(ppx_driver) = "ppx_deriving.api,yojson,aplomb"
   archive(ppx_driver, byte) = "ppx_deriving_aplomb.cma"
-  archive(ppx_driver, native) = "ppx_deriving_aplomb.cmxa"
+  archive(ppx_driver, native) = "ppx_deriving_aplomb.cmxs"
   exists_if = "ppx_deriving_aplomb.cma"
 )
 
-package "local" (
-  requires = "str,yojson,markup,webview,vega-lite,unix,uri,webbrowser"
-  archive(byte) = "aplombLocal.cma"
-  archive(natie) = "aplombLocal.cmxa"
-  exists_if = "aplombLocal.cma"
+package "webview" (
+  requires = "str,yojson,markup,webview,vega-lite,unix,uri,aplomb,webview"
+  archive(byte) = "aplombWebview.cma"
+  archive(natie) = "aplombWebview.cmxa"
+  exists_if = "aplombWebview.cma"
+)
+
+package "browser" (
+  requires = "str,yojson,markup,webview,vega-lite,unix,uri,aplomb,webbrowser"
+  archive(byte) = "aplombBrowser.cma"
+  archive(natie) = "aplombBrowser.cmxa"
+  exists_if = "aplombBrowser.cma"
+)
+
+package "iocaml" (
+  requires = "str,yojson,markup,webview,vega-lite,unix,uri,aplomb,iocaml-kernel.notebook"
+  archive(byte) = "IAplomb.cma"
+  archive(natie) = "IAplomb.cmxa"
+  exists_if = "IAplomb.cma"
 )
 
 # OASIS_STOP
